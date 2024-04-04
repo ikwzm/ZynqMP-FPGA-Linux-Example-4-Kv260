@@ -202,7 +202,7 @@ proc create_root_design { parentCell } {
   set_property -dict [list CONFIG.PSU__USE__FABRIC__RST {1} ] $zynq_ultra_ps_e_0
   set_property -dict [list CONFIG.PSU__FPGA_PL0_ENABLE  {1} ] $zynq_ultra_ps_e_0
   set_property -dict [list CONFIG.PSU__FPGA_PL1_ENABLE  {0} ] $zynq_ultra_ps_e_0
-  set_property -dict [list CONFIG.PSU__CRL_APB__PL0_REF_CTRL__ACT_FREQMHZ {250.000000} ] $zynq_ultra_ps_e_0
+  set_property -dict [list CONFIG.PSU__CRL_APB__PL0_REF_CTRL__FREQMHZ {250.000000} ] $zynq_ultra_ps_e_0
 
   # 
   # Add FAN_EN
