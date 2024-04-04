@@ -220,6 +220,8 @@ class v4l2_capture_test_bench
         else
           out << "  Check Buffer[" << buf_index << "] Data... Ok!";
       }
+      if (mismatch > 0)
+        try_error = true;
       _time_point_list[try_num].now_check_done();
       if (_capture->enqueue_buffer(buf_index) == false)
       {
@@ -334,8 +336,10 @@ int main()
   if (tb.prepare_buffers() == false)
     exit(EXIT_FAILURE);
   tb.print_buffers_info();
-  if (tb.run(false) == false)
+  if (tb.run(true) == false) {
+    std::cerr << "Try Run Failed." << std::endl;
     exit(EXIT_FAILURE);
+  }
   tb.print_run_times();
   cap.close();
 }
