@@ -125,6 +125,11 @@ class v4l2_capture
   v4l2_capture(const char* device_name) : v4l2_capture(device_name, V4L2_MEMORY_MMAP)
   {
   }
+
+  virtual void print_device_info(std::ostream& out)
+  {
+    out << "VideoDevice    : " << _video_device_name << std::endl;
+  }
   
     ~v4l2_capture()
   {

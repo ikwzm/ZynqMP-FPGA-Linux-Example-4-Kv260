@@ -32,6 +32,7 @@
 #include "v4l2_capture_udmabuf.h"
 #include "v4l2_capture_dma_heap.h"
 
+#include <getopt.h>
 #include <iostream>
 #include <cstdlib>
 #include <cstdint>
@@ -71,21 +72,196 @@ class v4l2_capture_test_bench
   };
   
  public:
+  const char*   _default_video_device_name   = "/dev/video0";
+  const char*   _default_udmabuf_device_name = "/dev/udmabuf0";
+  const char*   _default_dmaheap_device_name = "/dev/dma_heap/reserved";
+  const int     _default_queue_size          =  4;
+  const int     _default_try_count           = 10;
+  const int     _default_pixel_width         = 800;
+  const int     _default_pixel_height        = 480;
+  const int     _default_pixel_format        = V4L2_PIX_FMT_RGB32;
+  const bool    _default_verbose             = false;
+
+  bool          _verbose;
+  int           _pixel_width;
+  int           _pixel_height;
+  int           _pixel_format;
   int           _queue_size;
   int           _try_count;
   v4l2_capture* _capture;
   TimePonts*    _time_point_list;
 
   v4l2_capture_test_bench(v4l2_capture* capture, int queue_size, int try_count) :
-    _queue_size(queue_size),
-    _try_count(try_count),
-    _capture(capture)
+    _pixel_width    (_default_pixel_width ),
+    _pixel_height   (_default_pixel_height),
+    _pixel_format   (_default_pixel_format),
+    _queue_size     (queue_size           ),
+    _try_count      (try_count            ),
+    _capture        (capture              ),
+    _time_point_list(nullptr              )
   {
-    _time_point_list = new TimePonts[try_count];
+  }
+
+  v4l2_capture_test_bench() :
+    v4l2_capture_test_bench(nullptr, _default_queue_size, _default_try_count)
+  {
+  }
+
+  v4l2_capture_test_bench(int argc, char* argv[]) :
+    _pixel_width    (_default_pixel_width ),
+    _pixel_height   (_default_pixel_height),
+    _pixel_format   (_default_pixel_format),
+    _queue_size     (_default_queue_size  ),
+    _try_count      (_default_try_count   ),
+    _capture        (nullptr              ),
+    _time_point_list(nullptr              )
+  {
+    setup(argc, argv);
+  }
+
+  bool  is_device_ready()
+  {
+    if (_capture == nullptr)
+      return false;
+    else
+      return _capture->opend();
+  }
+
+  bool  print_device_info()
+  {
+    if (_capture == nullptr)
+    {
+      std::cerr << "Not set _capture" << std::endl;
+      return false;
+    }
+    _capture->print_device_info(std::cout);
+    return true;
+  }
+  
+  const char*         _short_options  = "hvV:U::D::W:H:C:Q:";
+  const struct option _long_options[10] = {
+      {"help"         , no_argument      , NULL, 'h'},
+      {"verbose"      , no_argument      , NULL, 'v'},
+      {"video-device" , required_argument, NULL, 'V'},
+      {"u-dma-buf"    , optional_argument, NULL, 'U'},
+      {"dma-heap"     , optional_argument, NULL, 'D'},
+      {"width"        , required_argument, NULL, 'W'},
+      {"height"       , required_argument, NULL, 'H'},
+      {"count"        , required_argument, NULL, 'C'},
+      {"queue"        , required_argument, NULL, 'Q'},
+      {0              , 0                , NULL,  0 },
+  };
+
+  void print_help()
+  {
+    print_help(std::cout);
+  }
+  
+  void print_help(std::ostream& out)
+  {
+    out << "NAME" << std::endl;
+    out << "    v4l2_capture_test - V4l2 Capture Test Bench" << std::endl;
+    out << std::endl;
+    out << "SYNOPSYS" << std::endl;
+    out << "    v4l2_capture_test [OPTION]" << std::endl;
+    out << std::endl;
+    out << "DESCRIPTION" << std::endl;
+    out << "    Video4Linux Capture Test Bench" << std::endl;
+    out << std::endl;
+    out << "OPTIONS" << std::endl;
+    out << "    -h, --help         Help Text - This message" << std::endl;
+    out << "    -v, --verbose      Turn on verbosity"  << std::endl;
+    out << "    -V, --video-device VIDEO_DEVICE"       << std::endl;
+    out << "    -D, --dma-heap     [DMA_HEAP_DEVICE]"  << std::endl;
+    out << "    -W, --width        PIXEL_WIDTH"        << std::endl;
+    out << "    -H, --height       PIXEL_HEIGHT"       << std::endl;
+    out << "    -C, --count        TRY_COUNT"          << std::endl;
+    out << "    -Q, --queue        QUEUE_SIZE"         << std::endl;
+  }
+
+  bool setup(int argc, char* argv[])
+  {
+    const int MEM_TYPE_MMAP    = 0;
+    const int MEM_TYPE_UDMABUF = 1;
+    const int MEM_TYPE_DMAHEAP = 2;
+    int   mem_type         = MEM_TYPE_MMAP;
+    bool  verbose          = _default_verbose;
+    char* video_dev_name   = const_cast<char*>(_default_video_device_name  );
+    char* udmabuf_dev_name = const_cast<char*>(_default_udmabuf_device_name);
+    char* dmaheap_dev_name = const_cast<char*>(_default_dmaheap_device_name);
+    int   pixel_width      = _default_pixel_width;
+    int   pixel_height     = _default_pixel_height;
+    int   try_count        = _default_try_count;
+    int   queue_size       = _default_queue_size;
+    int   index;
+    int   ch;
+    while((ch = getopt_long(argc, argv, _short_options, _long_options, &index)) != -1)
+    {
+      // std::cout << "option[" << index << "]:" << _long_options[index].name << std::endl;
+      switch (ch)
+      {
+        case 'h':
+          print_help();
+          return false;
+        case 'v':
+          verbose = true;
+          break;
+        case 'V':
+          video_dev_name = optarg;
+          break;
+        case 'U':
+          mem_type = MEM_TYPE_UDMABUF;
+          if (optarg != NULL)
+            udmabuf_dev_name = optarg;
+          break;
+        case 'D':
+          mem_type = MEM_TYPE_DMAHEAP;
+          if (optarg != NULL)
+            dmaheap_dev_name = optarg;
+          break;
+        case 'W':
+          pixel_width  = atoi(optarg);
+          break;
+        case 'H':
+          pixel_height = atoi(optarg);
+          break;
+        case 'C':
+          try_count    = atoi(optarg);
+          break;
+        case 'Q':
+          queue_size   = atoi(optarg);
+          break;
+        default:
+          print_help();
+          return false;
+      } 
+    }
+    if      (mem_type == MEM_TYPE_UDMABUF)
+      _capture = new v4l2_capture_udmabuf(video_dev_name, udmabuf_dev_name );
+    else if (mem_type == MEM_TYPE_DMAHEAP) 
+      _capture = new v4l2_capture_dma_heap(video_dev_name, dmaheap_dev_name);
+    else
+      _capture = new v4l2_capture(video_dev_name);
+    if (_capture->opend() == false)
+    {
+      std::cerr << "Can not open " << video_dev_name << std::endl;
+      return false;
+    }
+    _verbose      = verbose;
+    _pixel_width  = pixel_width;
+    _pixel_height = pixel_height;
+    _try_count    = try_count;
+    _queue_size   = queue_size;
+    return true;
   }
 
   bool set_format(int width, int height, int pixelformat)
   {
+    if (_capture == nullptr)
+    {
+      std::cerr << "Not set _capture" << std::endl;
+      return false;
+    }
     if (_capture->set_format(width, height, pixelformat) == false)
     {
       std::cerr << "Can not set format" << std::endl;
@@ -99,9 +275,19 @@ class v4l2_capture_test_bench
     return true;
   }
 
+  bool set_format()
+  {
+    return set_format(_pixel_width, _pixel_height, _pixel_format);
+  }
+
   bool prepare_buffers()
   {
     bool init_error = false;
+    if (_capture == nullptr)
+    {
+      std::cerr << "Not set _capture" << std::endl;
+      return false;
+    }
     //
     // Request Buffers
     //
@@ -144,6 +330,11 @@ class v4l2_capture_test_bench
 
   void print_buffers_info(std::ostream& out)
   {
+    if (_capture == nullptr)
+    {
+      std::cerr << "Not set _capture" << std::endl;
+      return;
+    }
     _capture->print_buffers_info(out);
   }
   void print_buffers_info()
@@ -151,8 +342,16 @@ class v4l2_capture_test_bench
     print_buffers_info(std::cout);
   }
   
-  bool run(std::ostream& out, bool log)
+  bool run(std::ostream& out)
   {
+    if (_capture == nullptr)
+    {
+      std::cerr << "Not set _capture" << std::endl;
+      return false;
+    }
+    if (_time_point_list != nullptr)
+      delete[] _time_point_list;
+    _time_point_list = new TimePonts[_try_count];
     //
     // Enqueue Buffers
     //
@@ -195,7 +394,7 @@ class v4l2_capture_test_bench
         break;
       }
       _time_point_list[try_num].now_dequeue_done();
-      if (log == true)
+      if (_verbose == true)
         out << "## Dequeue buffer[" << buf_index << "]";
       if (_capture->get_buffer_map(buf_index, (void**)(&buf_ptr), &buf_size) == false)
       {
@@ -213,7 +412,7 @@ class v4l2_capture_test_bench
           mismatch++;
         }
       }
-      if (log == true)
+      if (_verbose == true)
       {
         if (mismatch > 0)
           out << "  Check Buffer[" << buf_index << "] Data... Mismatch(=" << mismatch << ")!";
@@ -230,7 +429,7 @@ class v4l2_capture_test_bench
         break;
       }
       _time_point_list[try_num].now_enqueue_done();
-      if (log == true)
+      if (_verbose == true)
         out << "  Enqueue Buffer[" << buf_index << "]"<< std::endl;
       _time_point_list[try_num].now_done();
     }
@@ -247,13 +446,18 @@ class v4l2_capture_test_bench
     else
       return true;
   }
-  bool run(bool log)
+  bool run()
   {
-    return run(std::cout, log);
+    return run(std::cout);
   }
 
   void print_format(std::ostream& out)
   {
+    if (_capture == nullptr)
+    {
+      std::cerr << "Not set _capture" << std::endl;
+      return;
+    }
     out << "Format: " << std::endl;
     out << "  Width        : " << _capture->_v4l2_pix_format.width        << std::endl;
     out << "  Height       : " << _capture->_v4l2_pix_format.height       << std::endl;
@@ -268,6 +472,16 @@ class v4l2_capture_test_bench
 
   void print_run_times(std::ostream& out)
   {
+    if (_capture == nullptr)
+    {
+      std::cerr << "Not set _capture" << std::endl;
+      return;
+    }
+    if (_time_point_list == nullptr)
+    {
+      std::cerr << "Not set _time_point_list" << std::endl;
+      return;
+    }
     out << "Times: # microseconds " << std::endl;
     std::vector<double> loop_times;
     std::vector<double> wait_times;
@@ -312,34 +526,21 @@ class v4l2_capture_test_bench
   }
 };
 
-int main()
+int main(int argc, char* argv[])
 {
-  int          queue_size =  4;
-  int          try_count  = 10;
-  const char*  video_device_name = "/dev/video0";
-//v4l2_capture cap(video_device_name);
-//v4l2_capture_udmabuf cap(video_device_name, "/dev/udmabuf0");
-  v4l2_capture_dma_heap cap(video_device_name, "/dev/dma_heap/reserved");
-
-  if (cap.opend() == false)
-  {
-    std::cerr << "Can not open " << video_device_name << std::endl;
+  v4l2_capture_test_bench tb(argc, argv);
+  if (tb.is_device_ready() == false)
     exit(EXIT_FAILURE);
-  }
-  std::cout << "Video Device Name    : " << video_device_name << std::endl;
-
-  v4l2_capture_test_bench tb(&cap, queue_size, try_count);
-
-  if (tb.set_format(512, 512, V4L2_PIX_FMT_RGB32) == false)
+  tb.print_device_info();
+  if (tb.set_format() == false)
     exit(EXIT_FAILURE);
   tb.print_format();
   if (tb.prepare_buffers() == false)
     exit(EXIT_FAILURE);
   tb.print_buffers_info();
-  if (tb.run(true) == false) {
+  if (tb.run() == false) {
     std::cerr << "Try Run Failed." << std::endl;
     exit(EXIT_FAILURE);
   }
   tb.print_run_times();
-  cap.close();
 }

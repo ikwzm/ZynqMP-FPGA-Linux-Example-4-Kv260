@@ -62,6 +62,12 @@ class v4l2_capture_dma_heap: public v4l2_capture
     return true;
   }
 
+  void print_device_info(std::ostream& out) override
+  {
+    v4l2_capture::print_device_info(out);
+    out << "DmaHeapDevice  : " << _dma_heap_device_name << std::endl;
+  }
+
   bool memmap_buffers() override
   {
     int error_count = 0;
