@@ -43,6 +43,7 @@
 #include <linux/of.h>
 #include <linux/of_device.h>
 #include <linux/sched.h>
+#include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
@@ -91,6 +92,8 @@ struct xxxx_port {
 	struct vb2_queue        vb2_queue;
 	struct list_head        xbuf_list;
 	bool                    open;
+	bool			streaming;
+	bool			stop;
 	unsigned int            sequence;
 	unsigned int            width;
 	unsigned int            height;
@@ -159,6 +162,11 @@ static inline void xxxx_set_ctrl_stat_mode(struct xxxx_device* xdev, u8 ctrl, u8
 	iowrite32(ctrl_stat_mode, xdev->regs_addr+MW_MODE_REGS_ADDR);
 }
 
+static inline void xxxx_set_ctrl(struct xxxx_device* xdev, u8 ctrl)
+{
+	iowrite8(ctrl, xdev->regs_addr+MW_CTRL_REGS_ADDR);
+}
+
 static void xxxx_start(struct xxxx_device* xdev,
                        struct xxxx_buffer* xbuf)
 {
@@ -182,17 +190,19 @@ static void xxxx_start(struct xxxx_device* xdev,
 
 static void xxxx_stop(struct xxxx_device* xdev)
 {
-	const u16          mode      = MW_MODE_IRQ_ENABLE;
-	const u8           ctrl      = MW_CTRL_STOP;
-	xxxx_set_ctrl_stat_mode(xdev, ctrl, 0, mode);
+	// stop disabled due to hardwre bug!
+	// const u8  ctrl = MW_CTRL_STOP        |
+	//                  MW_CTRL_IRQ_ENABLE  |
+	//                  MW_CTRL_FIRST       |
+	//                  MW_CTRL_LAST        ;
+	// xxxx_set_ctrl(xdev, ctrl);
 }
 
 static void xxxx_reset(struct xxxx_device* xdev)
 {
-	const u16          mode      = MW_MODE_IRQ_ENABLE;
-	const u8           ctrl      = MW_CTRL_RESET;
-	xxxx_set_ctrl_stat_mode(xdev, ctrl, 0, mode);
-	xxxx_set_ctrl_stat_mode(xdev,    0, 0, mode);
+	const u8  ctrl = MW_CTRL_RESET;
+	xxxx_set_ctrl(xdev, ctrl);
+	xxxx_set_ctrl(xdev,    0);
 }
 
 static int v4l2_debug = 0;
@@ -244,11 +254,13 @@ static int xxxx_vb2_start_streaming(struct vb2_queue* vb2_queue, unsigned int co
 
 	port->sequence = 0;
         
-	xbuf = list_first_entry(&port->xbuf_list, struct xxxx_buffer, list);
-	xbuf->allow_dq = true;
 	spin_lock_irqsave(&xdev->slock, flags);
+	xbuf = list_first_entry(&port->xbuf_list, struct xxxx_buffer, list);
+	xbuf->allow_dq  = true;
 	list_del(&xbuf->list);
 	list_add_tail(&xbuf->list, &xdev->xbuf_list);
+	port->streaming = true;
+	port->stop      = false;
 	spin_unlock_irqrestore(&xdev->slock, flags);
 	xxxx_reset(xdev);
 	xxxx_start(xdev, xbuf);
@@ -265,10 +277,21 @@ static void xxxx_vb2_stop_streaming(struct vb2_queue* vb2_queue)
 	struct xxxx_device* xdev = port->xdev;
 	struct xxxx_buffer* xbuf;
 	struct vb2_buffer*  vb2_buf;
+	unsigned long       flags;
+	bool                streaming;
 
 	V4L2_DBG(1, xdev, "%s start", __func__);
 
 	xxxx_stop(xdev);
+	while(true) {
+		spin_lock_irqsave(&xdev->slock, flags);
+		port->stop = true;
+		streaming  = port->streaming;
+		spin_unlock_irqrestore(&xdev->slock, flags);
+		if (streaming == false)
+			break;
+		mdelay(1000);
+	}
 	
 	while(!list_empty(&xdev->xbuf_list)) {
 		xbuf = list_first_entry(&xdev->xbuf_list, struct xxxx_buffer, list);
@@ -546,7 +569,7 @@ static void xxxx_active_buffer_next(struct xxxx_port* port)
 	unsigned long       flags;
 
 	spin_lock_irqsave(&xdev->slock, flags);
-	if (!list_empty(&port->xbuf_list)) {
+	if ((port->streaming == true) && !list_empty(&port->xbuf_list)) {
 		xbuf =  list_first_entry(&port->xbuf_list, struct xxxx_buffer, list);
 		if (list_is_last(&xbuf->list, &port->xbuf_list)) {
 			xbuf->allow_dq = false;
@@ -579,7 +602,10 @@ static void xxxx_process_buffer_complete(struct xxxx_port* port)
 			xbuf->allow_dq = false;
 		} else {
 			spin_lock_irqsave(&xdev->slock, flags);
-			list_add_tail(&xbuf->list, &port->xbuf_list);
+			if (port->stop == true)
+				port->streaming = 0;
+			else
+				list_add_tail(&xbuf->list, &port->xbuf_list);
 			spin_unlock_irqrestore(&xdev->slock, flags);
 		}
 	} else {
