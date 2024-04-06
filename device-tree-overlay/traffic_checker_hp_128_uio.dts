@@ -1,0 +1,41 @@
+/dts-v1/; /plugin/;
+/ {
+	fragment@0 {
+		target-path = "/fpga-full";
+		__overlay__ {
+			firmware-name = "traffic_checker_hp_128.bin";
+		};
+        };
+	fragment@1 {
+		target-path = "/amba_pl@0";
+		__overlay__ {
+			afi0 {
+				compatible    = "xlnx,afi-fpga";
+				config-afi    = <4 0>, <5 0>, <14 0x200>;
+			};
+		};
+	};
+	fragment@2 {
+		target-path = "/amba_pl@0";
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		__overlay__ {
+			#address-cells = <2>;
+			#size-cells = <2>;
+
+			uio_traffic_checker_hp {
+				compatible = "generic-uio";
+				reg = <0x0 0xA0000000 0x0 0x00001000>;
+				interrupt-parent = <&gic>;
+				interrupts = <0 89 4>;
+	                };
+
+			udmabuf_traffic_checker {
+				compatible  = "ikwzm,u-dma-buf";
+				device-name = "udmabuf_traffic_checker";
+				size = <0x02000000>;
+	                };
+                };
+	} ;
+} ;
