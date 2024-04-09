@@ -215,7 +215,7 @@ proc create_root_design { parentCell } {
   # 
   # Create instance: AXI_TRAFFIC_CHECKER and set properties
   #
-  set AXI_TRAFFIC_CHECKER_0 [ create_bd_cell -type ip -vlnv ikwzm:PIPEWORK:AXI_TRAFFIC_CHECKER:0.2 AXI_TRAFFIC_CHECKER_0 ]
+  set AXI_TRAFFIC_CHECKER_0 [ create_bd_cell -type ip -vlnv ikwzm:PIPEWORK:AXI_TRAFFIC_CHECKER:0.3 AXI_TRAFFIC_CHECKER_0 ]
   set_property -dict [ list CONFIG.BUILD_VERSION   {3} ] $AXI_TRAFFIC_CHECKER_0
   set_property -dict [ list CONFIG.M_ADDR_WIDTH   {64} ] $AXI_TRAFFIC_CHECKER_0
   set_property -dict [ list CONFIG.M_DATA_WIDTH  {128} ] $AXI_TRAFFIC_CHECKER_0
