@@ -2,6 +2,7 @@ from udmabuf         import Udmabuf
 from uio             import Uio
 from traffic_checker import Traffic_Checker
 import numpy as np
+import math
 import time
 import argparse
 
@@ -54,39 +55,53 @@ class Write_Traffic_Check:
 if __name__ == '__main__':
     print_tag = "Write_Traffic_Check :"
     parser = argparse.ArgumentParser(description='Test Bench for Traffic_Checker')
-    parser.add_argument('-s', '--size'  , help='buffer size(words) ', action='store', type=int, default=1024)
-    parser.add_argument('-n', '--number', help='number of loops '   , action='store', type=int, default=1)
+    parser.add_argument('-W', '--words'  , help='Write size(Words) ', action='store', type=int, default=1024)
+    parser.add_argument('-B', '--bytes'  , help='Write size(Bytes) ', action='store', type=int, default=0)
+    parser.add_argument('-K', '--kbytes' , help='Write size(KBytes) ', action='store', type=int, default=0)
+    parser.add_argument('-M', '--mbytes' , help='Write size(MBytes) ', action='store', type=int, default=0)
+    parser.add_argument('-N', '--number' , help='number of loops '   , action='store', type=int, default=1)
 
     args   = parser.parse_args()
     test   = Write_Traffic_Check()
     test.tc.print_info(print_tag)
 
-    size = args.size
-    test.allocate_array(size)
+    bytes_per_word = np.dtype(test.dtype).itemsize
+
+    if   args.mbytes > 0:
+        words = math.ceil((args.mbytes*(1024*1024)) / bytes_per_word)
+    elif args.kbytes > 0:
+        words = math.ceil((args.kbytes*(1024     )) / bytes_per_word)
+    elif args.bytes  > 0:
+        words = math.ceil((args.bytes             ) / bytes_per_word)
+    else:
+        words = args.words
+
+    test.allocate_array(words)
     test.array[:] = 0
 
-    print ("{0} bytes_per_word         : {1}".format(print_tag, np.dtype(test.dtype).itemsize))
-    print ("{0} write_words            : {1}".format(print_tag, args.size  ))
+    test_bytes  = words * bytes_per_word
+    total_time  = 0
+    total_bytes = 0
+    count       = 0
+
+    print ("{0} bytes_per_word         : {1}".format(print_tag, bytes_per_word))
+    print ("{0} write_words            : {1}".format(print_tag, words))
     print ("{0} try_loops              : {1}".format(print_tag, args.number))
-    
-    total_time = 0
-    total_size = 0
-    count      = 0
 
     for i in range (0,args.number):
         test.sync_for_device()
         test.run()
         test.sync_for_cpu()
         total_time   = total_time  + test.run_time
-        total_size   = total_size  + size
+        total_bytes  = total_bytes + test_bytes
         count        = count       + 1
         print ("{0} time                   : {1:>8.3f} # [msec]".format(print_tag, round(test.run_time*1000.0,3)))
 
-    average_time = round((total_time/count)*1000.0            ,3)
-    throughput   = round(((total_size/total_time)/(1000*1000)),3)
+    average_time = round((total_time/count)*1000.0             ,3)
+    throughput   = round(((total_bytes/total_time)/(1000*1000)),3)
 
     print ("{0} average_time           : {1:>8.3f} # [msec]"      .format(print_tag, average_time))
-    print ("{0} throughput             : {1:>8.3f} # [mwords/sec]".format(print_tag, throughput  ))
+    print ("{0} throughput             : {1:>8.3f} # [mbytes/sec]".format(print_tag, throughput  ))
 
     print(test.array)
     
