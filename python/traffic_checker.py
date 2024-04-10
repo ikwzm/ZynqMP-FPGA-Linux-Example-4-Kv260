@@ -53,13 +53,25 @@ class Traffic_Checker:
         mw_param   = self.regs.read_word(Traffic_Checker.MW_PARAM_REGS_ADDR )
         self.version_major = (version_hi >> 28) & 0x0F
         self.version_minor = (version_hi >> 24) & 0x0F
-        self.version_build = (version_hi >> 16) & 0xFF
+        self.version_build = (version_hi >> 18) & 0x3F
+        self.axi_interface = (version_hi >> 16) & 0x03
         self.data_width    = 2**((version_hi >>  0) & 0x0F)
         self.mw_xfer_size  = 2**((mw_param   >>  0) & 0x0F)
         self.mr_xfer_size  = 2**((mr_param   >>  0) & 0x0F)
 
+    def axi_interface_to_string(self):
+        if   self.axi_interface == 1:
+            return "HP"
+        elif self.axi_interface == 2:
+            return "HPC"
+        elif self.axi_interface == 3:
+            return "ACP"
+        else:
+            return "Unknown"
+
     def print_info(self, tag="Traffic_Checker", file=sys.stdout):
         print ("{0} Version                : {1}.{2}.{3}".format(tag, self.version_major, self.version_minor, self.version_build),file=file)
+        print ("{0} AXI Interface Type     : {1}"        .format(tag, self.axi_interface_to_string()))
         print ("{0} AXI Data Width         : {1} Bit"    .format(tag, self.data_width), file=file)
         print ("{0} Write Transaction Size : {1} Byte"   .format(tag, self.mw_xfer_size), file=file)
         print ("{0} Read  Transaction Size : {1} Byte"   .format(tag, self.mr_xfer_size), file=file)
