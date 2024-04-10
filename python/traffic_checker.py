@@ -1,6 +1,7 @@
 from uio import Uio
 import sys
 import os
+import math
 
 class Traffic_Checker:
 
@@ -71,7 +72,8 @@ class Traffic_Checker:
 
     def print_info(self, tag="Traffic_Checker", file=sys.stdout):
         print ("{0} Version                : {1}.{2}.{3}".format(tag, self.version_major, self.version_minor, self.version_build),file=file)
-        print ("{0} AXI Interface Type     : {1}"        .format(tag, self.axi_interface_to_string()))
+        print ("{0} Frequency              : {1} MHz"    .format(tag, math.ceil(self.frequency/(1000*1000)),file=file))
+        print ("{0} AXI Interface Type     : {1}"        .format(tag, self.axi_interface_to_string()),file=file)
         print ("{0} AXI Data Width         : {1} Bit"    .format(tag, self.data_width), file=file)
         print ("{0} Write Transaction Size : {1} Byte"   .format(tag, self.mw_xfer_size), file=file)
         print ("{0} Read  Transaction Size : {1} Byte"   .format(tag, self.mr_xfer_size), file=file)
