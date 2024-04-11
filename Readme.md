@@ -52,7 +52,7 @@ crw------- 1 root root 239, 0 Apr  6 11:05 /dev/udmabuf_traffic_checker
 
 ```console
 shell$ sudo python3 python/mw_test.py
-Write_Traffic_Check : Version                : 0.2.1
+Write_Traffic_Check : Version                : 0.3.1
 Write_Traffic_Check : AXI Data Width         : 128 Bit
 Write_Traffic_Check : Write Transaction Size : 4096 Byte
 Write_Traffic_Check : Read  Transaction Size : 4096 Byte
@@ -80,7 +80,7 @@ crw------- 1 root root 239, 0 Apr  6 11:05 /dev/udmabuf_traffic_checker
 
 ```console
 shell$ sudo python3 python/mw_test.py
-Write_Traffic_Check : Version                : 0.2.3
+Write_Traffic_Check : Version                : 0.3.3
 Write_Traffic_Check : AXI Data Width         : 128 Bit
 Write_Traffic_Check : Write Transaction Size : 4096 Byte
 Write_Traffic_Check : Read  Transaction Size : 4096 Byte
