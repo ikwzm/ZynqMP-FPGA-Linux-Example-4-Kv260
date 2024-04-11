@@ -124,11 +124,7 @@ set bCheckIPsPassed 1
 set bCheckIPs 1
 if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
-xilinx.com:ip:axi_bram_ctrl:4.1\
-xilinx.com:ip:blk_mem_gen:8.4\
 xilinx.com:ip:proc_sys_reset:5.0\
-xilinx.com:ip:xlslice:1.0\
-xilinx.com:ip:system_ila:1.1\
 xilinx.com:ip:zynq_ultra_ps_e:3.5\
 "
 
@@ -215,7 +211,7 @@ proc create_root_design { parentCell } {
   # 
   # Create instance: AXI_TRAFFIC_CHECKER and set properties
   #
-  set AXI_TRAFFIC_CHECKER_0 [ create_bd_cell -type ip -vlnv ikwzm:PIPEWORK:AXI_TRAFFIC_CHECKER:0.3 AXI_TRAFFIC_CHECKER_0 ]
+  set AXI_TRAFFIC_CHECKER_0 [ create_bd_cell -type ip -vlnv ikwzm:PIPEWORK:AXI_TRAFFIC_CHECKER:0.4 AXI_TRAFFIC_CHECKER_0 ]
   set_property -dict [ list CONFIG.BUILD_VERSION   {2} ] $AXI_TRAFFIC_CHECKER_0
   set_property -dict [ list CONFIG.M_ADDR_WIDTH   {64} ] $AXI_TRAFFIC_CHECKER_0
   set_property -dict [ list CONFIG.M_DATA_WIDTH  {128} ] $AXI_TRAFFIC_CHECKER_0
