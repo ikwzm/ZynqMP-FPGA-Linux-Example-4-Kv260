@@ -46,11 +46,13 @@ class Write_Traffic_Check:
     def run(self):
         start = time.time()
         self.tc.mw_setup(self.udmabuf.phys_addr, self.array.size * (np.dtype(self.dtype).itemsize))
+        self.tc.mw_monitor_clear()
         self.uio.irq_on()
         self.tc.mw_start()
         self.uio.wait_irq()
         self.tc.mw_clear_status()
         self.run_time = time.time() - start
+        self.tc.mw_read_monitor()
                       
 if __name__ == '__main__':
     print_tag = "Write_Traffic_Check :"
@@ -105,3 +107,4 @@ if __name__ == '__main__':
 
     print(test.array)
     
+    test.tc.mw_print_monitor(print_tag)
