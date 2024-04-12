@@ -51,13 +51,37 @@ crw------- 1 root root 239, 0 Apr  6 11:05 /dev/udmabuf_traffic_checker
 #### Run Python Script
 
 ```console
-shell$ sudo python3 python/mw_test.py
-Write_Traffic_Check : Version                : 0.3.1
+shell$ sudo python3 python/mw_test.py -M 16 -N 10
+Write_Traffic_Check : Version                : 0.4.0
+Write_Traffic_Check : Frequency              : 100 MHz
+Write_Traffic_Check : AXI Interface Type     : HP
 Write_Traffic_Check : AXI Data Width         : 128 Bit
 Write_Traffic_Check : Write Transaction Size : 4096 Byte
 Write_Traffic_Check : Read  Transaction Size : 4096 Byte
 Write_Traffic_Check : Cache Coherent         : False
-[   0    1    2 ... 1021 1022 1023]
+Write_Traffic_Check : bytes_per_word         : 4
+Write_Traffic_Check : write_words            : 4194304
+Write_Traffic_Check : try_loops              : 10
+Write_Traffic_Check : time                   :   10.836 # [msec]
+Write_Traffic_Check : time                   :   10.758 # [msec]
+Write_Traffic_Check : time                   :   10.788 # [msec]
+Write_Traffic_Check : time                   :   10.699 # [msec]
+Write_Traffic_Check : time                   :   10.750 # [msec]
+Write_Traffic_Check : time                   :   10.736 # [msec]
+Write_Traffic_Check : time                   :   10.672 # [msec]
+Write_Traffic_Check : time                   :   10.667 # [msec]
+Write_Traffic_Check : time                   :   10.696 # [msec]
+Write_Traffic_Check : time                   :   10.769 # [msec]
+Write_Traffic_Check : average_time           :   10.737 # [msec]
+Write_Traffic_Check : throughput             : 1562.562 # [mbytes/sec]
+[      0       1       2 ... 4194301 4194302 4194303]
+Write_Traffic_Check : MW Total Count         : 1056787
+Write_Traffic_Check : MW Address Xfer Count  : 4096
+Write_Traffic_Check : MW Address Valid Count : 4096
+Write_Traffic_Check : MW Address Ready Count : 1056787
+Write_Traffic_Check : MW Data Xfer Count     : 1048576
+Write_Traffic_Check : MW Data Valid Count    : 1048576
+Write_Traffic_Check : MW Data Ready Count    : 1056787
 ```
 
 ### Uninstall Device Tree
@@ -79,13 +103,37 @@ crw------- 1 root root 239, 0 Apr  6 11:05 /dev/udmabuf_traffic_checker
 #### Run Python Script
 
 ```console
-shell$ sudo python3 python/mw_test.py
-Write_Traffic_Check : Version                : 0.3.3
+shell$ sudo python3 python/mw_test.py -M 16 -N 10
+Write_Traffic_Check : Version                : 0.4.0
+Write_Traffic_Check : Frequency              : 100 MHz
+Write_Traffic_Check : AXI Interface Type     : ACP
 Write_Traffic_Check : AXI Data Width         : 128 Bit
 Write_Traffic_Check : Write Transaction Size : 4096 Byte
 Write_Traffic_Check : Read  Transaction Size : 4096 Byte
 Write_Traffic_Check : Cache Coherent         : True
-[   0    1    2 ... 1021 1022 1023]
+Write_Traffic_Check : bytes_per_word         : 4
+Write_Traffic_Check : write_words            : 4194304
+Write_Traffic_Check : try_loops              : 10
+Write_Traffic_Check : time                   :   11.281 # [msec]
+Write_Traffic_Check : time                   :   11.266 # [msec]
+Write_Traffic_Check : time                   :   11.250 # [msec]
+Write_Traffic_Check : time                   :   11.327 # [msec]
+Write_Traffic_Check : time                   :   11.283 # [msec]
+Write_Traffic_Check : time                   :   11.250 # [msec]
+Write_Traffic_Check : time                   :   11.321 # [msec]
+Write_Traffic_Check : time                   :   11.309 # [msec]
+Write_Traffic_Check : time                   :   11.304 # [msec]
+Write_Traffic_Check : time                   :   11.407 # [msec]
+Write_Traffic_Check : average_time           :   11.300 # [msec]
+Write_Traffic_Check : throughput             : 1484.742 # [mbytes/sec]
+[      0       1       2 ... 4194301 4194302 4194303]
+Write_Traffic_Check : MW Total Count         : 1118515
+Write_Traffic_Check : MW Address Xfer Count  : 4096
+Write_Traffic_Check : MW Address Valid Count : 1101839
+Write_Traffic_Check : MW Address Ready Count : 4119
+Write_Traffic_Check : MW Data Xfer Count     : 1048576
+Write_Traffic_Check : MW Data Valid Count    : 1110284
+Write_Traffic_Check : MW Data Ready Count    : 1048601
 ```
 
 ### Uninstall Device Tree
@@ -118,7 +166,8 @@ shell$ cd ../..
 
 ```console
 shell$ cd v4l2/capture
-shell$ g++ -g -o v4l2_capture_test v4l2_capture_test.cpp
+shell$ make
+g++ -g -o v4l2_capture_test v4l2_capture_test.cpp
 shell$ cd ../..
 ```
 
@@ -144,64 +193,64 @@ crw-rw----+ 1 root video 81, 0 Apr  6 11:32 /dev/video0
 #### Run v4l2_capture_test with V4L2_MEMORY_MMAP
 
 ```console
-shell$ sudo ./v4l2/capture/v4l2_capture_test 
+shell$ sudo ./v4l2/capture/v4l2_capture_test -W 1280 -H 800 -C 10 -Q 4 
 VideoDevice    : /dev/video0
 Format: 
-  Width        : 800
-  Height       : 480
-  BytesPerLine : 800
-  SizeImage    : 384000
+  Width        : 1280
+  Height       : 800
+  BytesPerLine : 5120
+  SizeImage    : 4096000
 Buffers: 
   Type : V4L2_MEMORY_MMAP
   Size : 4
-  0: {start: 0x7f9fa02000, size: 384000}
-  1: {start: 0x7f9f9a4000, size: 384000}
-  2: {start: 0x7f9f946000, size: 384000}
-  3: {start: 0x7f9f8e8000, size: 384000}
+  0: {start: 0x7f91aa8000, size: 4096000}
+  1: {start: 0x7f916c0000, size: 4096000}
+  2: {start: 0x7f912d8000, size: 4096000}
+  3: {start: 0x7f90ef0000, size: 4096000}
 Times: # microseconds 
-  0: { Total: 13657, Wait: 225, Dequeue: 6, Check: 13412, Enqueue: 12 }
-  1: { Total: 13434, Wait: 8, Dequeue: 5, Check: 13415, Enqueue: 4 }
-  2: { Total: 13391, Wait: 3, Dequeue: 2, Check: 13380, Enqueue: 5 }
-  3: { Total: 13387, Wait: 4, Dequeue: 3, Check: 13373, Enqueue: 6 }
-  4: { Total: 13299, Wait: 4, Dequeue: 2, Check: 13287, Enqueue: 3 }
-  5: { Total: 13326, Wait: 2, Dequeue: 2, Check: 13317, Enqueue: 3 }
-  6: { Total: 13305, Wait: 2, Dequeue: 2, Check: 13296, Enqueue: 3 }
-  7: { Total: 13307, Wait: 2, Dequeue: 2, Check: 13297, Enqueue: 4 }
-  8: { Total: 13250, Wait: 3, Dequeue: 2, Check: 13241, Enqueue: 3 }
-  9: { Total: 13226, Wait: 3, Dequeue: 2, Check: 13218, Enqueue: 3 }
-  Avarage: { Total: 13358.2, Wait: 25.6, Dequeue: 2.8, Check: 13323.6, Enqueue: 4.6}
+  0: { Total: 146320, Wait: 2765, Dequeue: 9, Check: 143486, Enqueue: 58 }
+  1: { Total: 140160, Wait: 7, Dequeue: 6, Check: 140118, Enqueue: 27 }
+  2: { Total: 140080, Wait: 4, Dequeue: 4, Check: 140041, Enqueue: 29 }
+  3: { Total: 140562, Wait: 5, Dequeue: 3, Check: 140520, Enqueue: 31 }
+  4: { Total: 139940, Wait: 4, Dequeue: 4, Check: 139907, Enqueue: 22 }
+  5: { Total: 140522, Wait: 4, Dequeue: 3, Check: 140471, Enqueue: 42 }
+  6: { Total: 139895, Wait: 5, Dequeue: 4, Check: 139859, Enqueue: 26 }
+  7: { Total: 140096, Wait: 4, Dequeue: 3, Check: 140043, Enqueue: 44 }
+  8: { Total: 140078, Wait: 5, Dequeue: 5, Check: 140035, Enqueue: 31 }
+  9: { Total: 139895, Wait: 4, Dequeue: 4, Check: 139865, Enqueue: 20 }
+  Avarage: { Total: 140755, Wait: 280.7, Dequeue: 4.5, Check: 140434, Enqueue: 33}
 ```
 
 #### Run v4l2_capture_test with V4L2_MEMORY_DMABUF
 
 ```console
-shell$ sudo ./v4l2/capture/v4l2_capture_test -D
+shell$ sudo ./v4l2/capture/v4l2_capture_test -W 1280 -H 800 -C 10 -Q 4 -D
 VideoDevice    : /dev/video0
 DmaHeapDevice  : /dev/dma_heap/reserved
 Format: 
-  Width        : 800
-  Height       : 480
-  BytesPerLine : 800
-  SizeImage    : 384000
+  Width        : 1280
+  Height       : 800
+  BytesPerLine : 5120
+  SizeImage    : 4096000
 Buffers: 
   Type : V4L2_MEMORY_DMABUF
   Size : 4
-  0: {start: 0x7fbcbe2000, size: 384000, fd: 5}
-  1: {start: 0x7fbcb84000, size: 384000, fd: 6}
-  2: {start: 0x7fbcb26000, size: 384000, fd: 7}
-  3: {start: 0x7fbcac8000, size: 384000, fd: 8}
+  0: {start: 0x7f8f6b8000, size: 4096000, fd: 5}
+  1: {start: 0x7f8f2d0000, size: 4096000, fd: 6}
+  2: {start: 0x7f8eee8000, size: 4096000, fd: 7}
+  3: {start: 0x7f8eb00000, size: 4096000, fd: 8}
 Times: # microseconds 
-  0: { Total: 1926, Wait: 221, Dequeue: 6, Check: 1691, Enqueue: 6 }
-  1: { Total: 1629, Wait: 3, Dequeue: 2, Check: 1618, Enqueue: 4 }
-  2: { Total: 1678, Wait: 3, Dequeue: 2, Check: 1668, Enqueue: 4 }
-  3: { Total: 1629, Wait: 3, Dequeue: 2, Check: 1619, Enqueue: 3 }
-  4: { Total: 1685, Wait: 3, Dequeue: 2, Check: 1675, Enqueue: 4 }
-  5: { Total: 1644, Wait: 3, Dequeue: 2, Check: 1631, Enqueue: 6 }
-  6: { Total: 1631, Wait: 3, Dequeue: 2, Check: 1621, Enqueue: 4 }
-  7: { Total: 1778, Wait: 3, Dequeue: 2, Check: 1763, Enqueue: 10 }
-  8: { Total: 1633, Wait: 4, Dequeue: 3, Check: 1622, Enqueue: 4 }
-  9: { Total: 1741, Wait: 3, Dequeue: 2, Check: 1730, Enqueue: 5 }
-  Avarage: { Total: 1697.4, Wait: 24.9, Dequeue: 2.5, Check: 1663.8, Enqueue: 5}
+  0: { Total: 20136, Wait: 2563, Dequeue: 9, Check: 17505, Enqueue: 56 }
+  1: { Total: 17198, Wait: 6, Dequeue: 6, Check: 17127, Enqueue: 57 }
+  2: { Total: 17209, Wait: 11, Dequeue: 6, Check: 17136, Enqueue: 54 }
+  3: { Total: 17213, Wait: 11, Dequeue: 6, Check: 17136, Enqueue: 58 }
+  4: { Total: 17367, Wait: 12, Dequeue: 6, Check: 17290, Enqueue: 57 }
+  5: { Total: 17194, Wait: 12, Dequeue: 6, Check: 17118, Enqueue: 55 }
+  6: { Total: 17210, Wait: 12, Dequeue: 6, Check: 17138, Enqueue: 53 }
+  7: { Total: 17202, Wait: 6, Dequeue: 6, Check: 17130, Enqueue: 58 }
+  8: { Total: 17203, Wait: 12, Dequeue: 6, Check: 17127, Enqueue: 56 }
+  9: { Total: 17198, Wait: 13, Dequeue: 6, Check: 17123, Enqueue: 54 }
+  Avarage: { Total: 17513, Wait: 265.8, Dequeue: 6.3, Check: 17183, Enqueue: 55.8}
 ```
 
 ### Uninstall Device Tree
@@ -223,63 +272,63 @@ crw-rw----+ 1 root video 81, 0 Apr  6 11:32 /dev/video0
 #### Run v4l2_capture_test with V4L2_MEMORY_MMAP
 
 ```console
-shell$ sudo ./v4l2/capture/v4l2_capture_test
+shell$ sudo ./v4l2/capture/v4l2_capture_test -W 1280 -H 800 -C 10 -Q 4 
 VideoDevice    : /dev/video0
 Format: 
-  Width        : 800
-  Height       : 480
-  BytesPerLine : 800
-  SizeImage    : 384000
+  Width        : 1280
+  Height       : 800
+  BytesPerLine : 5120
+  SizeImage    : 4096000
 Buffers: 
   Type : V4L2_MEMORY_MMAP
   Size : 4
-  0: {start: 0x7fa5a22000, size: 384000}
-  1: {start: 0x7fa59c4000, size: 384000}
-  2: {start: 0x7fa5966000, size: 384000}
-  3: {start: 0x7fa5908000, size: 384000}
+  0: {start: 0x7f91998000, size: 4096000}
+  1: {start: 0x7f915b0000, size: 4096000}
+  2: {start: 0x7f911c8000, size: 4096000}
+  3: {start: 0x7f90de0000, size: 4096000}
 Times: # microseconds 
-  0: { Total: 1868, Wait: 223, Dequeue: 7, Check: 1622, Enqueue: 14 }
-  1: { Total: 1756, Wait: 10, Dequeue: 5, Check: 1721, Enqueue: 16 }
-  2: { Total: 1677, Wait: 9, Dequeue: 6, Check: 1652, Enqueue: 7 }
-  3: { Total: 1644, Wait: 6, Dequeue: 5, Check: 1625, Enqueue: 7 }
-  4: { Total: 1784, Wait: 7, Dequeue: 5, Check: 1755, Enqueue: 16 }
-  5: { Total: 1649, Wait: 9, Dequeue: 5, Check: 1624, Enqueue: 9 }
-  6: { Total: 1817, Wait: 7, Dequeue: 4, Check: 1788, Enqueue: 17 }
-  7: { Total: 1996, Wait: 9, Dequeue: 5, Check: 1960, Enqueue: 22 }
-  8: { Total: 1692, Wait: 8, Dequeue: 5, Check: 1663, Enqueue: 15 }
-  9: { Total: 1650, Wait: 9, Dequeue: 6, Check: 1624, Enqueue: 9 }
-  Avarage: { Total: 1753.3, Wait: 29.7, Dequeue: 5.3, Check: 1703.4, Enqueue: 13.2}
+  0: { Total: 18434, Wait: 906, Dequeue: 24, Check: 17420, Enqueue: 82 }
+  1: { Total: 18113, Wait: 19, Dequeue: 8, Check: 17996, Enqueue: 88 }
+  2: { Total: 18273, Wait: 19, Dequeue: 7, Check: 18162, Enqueue: 82 }
+  3: { Total: 17964, Wait: 18, Dequeue: 7, Check: 17855, Enqueue: 81 }
+  4: { Total: 17910, Wait: 19, Dequeue: 8, Check: 17801, Enqueue: 81 }
+  5: { Total: 17918, Wait: 19, Dequeue: 8, Check: 17809, Enqueue: 81 }
+  6: { Total: 18222, Wait: 21, Dequeue: 7, Check: 18114, Enqueue: 77 }
+  7: { Total: 17916, Wait: 19, Dequeue: 8, Check: 17806, Enqueue: 81 }
+  8: { Total: 17923, Wait: 19, Dequeue: 7, Check: 17815, Enqueue: 79 }
+  9: { Total: 17900, Wait: 19, Dequeue: 7, Check: 17791, Enqueue: 81 }
+  Avarage: { Total: 18057.3, Wait: 107.8, Dequeue: 9.1, Check: 17856.9, Enqueue: 81.3}
 ```
 #### Run v4l2_capture_test with V4L2_MEMORY_DMABUF
 
 ```console
-shell$ sudo v4l2/capture/v4l2_capture_test -D
+shell$ sudo ./v4l2/capture/v4l2_capture_test -W 1280 -H 800 -C 10 -Q 4 -D
 VideoDevice    : /dev/video0
 DmaHeapDevice  : /dev/dma_heap/reserved
 Format: 
-  Width        : 800
-  Height       : 480
-  BytesPerLine : 800
-  SizeImage    : 384000
+  Width        : 1280
+  Height       : 800
+  BytesPerLine : 5120
+  SizeImage    : 4096000
 Buffers: 
   Type : V4L2_MEMORY_DMABUF
   Size : 4
-  0: {start: 0x7f856f2000, size: 384000, fd: 5}
-  1: {start: 0x7f85694000, size: 384000, fd: 6}
-  2: {start: 0x7f85636000, size: 384000, fd: 7}
-  3: {start: 0x7f855d8000, size: 384000, fd: 8}
+  0: {start: 0x7fa9688000, size: 4096000, fd: 5}
+  1: {start: 0x7fa92a0000, size: 4096000, fd: 6}
+  2: {start: 0x7fa8eb8000, size: 4096000, fd: 7}
+  3: {start: 0x7fa8ad0000, size: 4096000, fd: 8}
 Times: # microseconds 
-  0: { Total: 1849, Wait: 225, Dequeue: 8, Check: 1602, Enqueue: 12 }
-  1: { Total: 1661, Wait: 8, Dequeue: 4, Check: 1632, Enqueue: 15 }
-  2: { Total: 1627, Wait: 8, Dequeue: 5, Check: 1603, Enqueue: 10 }
-  3: { Total: 1672, Wait: 7, Dequeue: 3, Check: 1640, Enqueue: 19 }
-  4: { Total: 1631, Wait: 10, Dequeue: 6, Check: 1603, Enqueue: 11 }
-  5: { Total: 1625, Wait: 6, Dequeue: 5, Check: 1602, Enqueue: 10 }
-  6: { Total: 1664, Wait: 7, Dequeue: 5, Check: 1634, Enqueue: 16 }
-  7: { Total: 1624, Wait: 9, Dequeue: 6, Check: 1600, Enqueue: 8 }
-  8: { Total: 1776, Wait: 6, Dequeue: 4, Check: 1746, Enqueue: 18 }
-  9: { Total: 1628, Wait: 10, Dequeue: 5, Check: 1603, Enqueue: 8 }
-  Avarage: { Total: 1675.7, Wait: 29.6, Dequeue: 5.1, Check: 1626.5, Enqueue: 12.7}
+  0: { Total: 24036, Wait: 2666, Dequeue: 24, Check: 21244, Enqueue: 100 }
+  1: { Total: 17539, Wait: 18, Dequeue: 8, Check: 17424, Enqueue: 86 }
+  2: { Total: 17425, Wait: 18, Dequeue: 8, Check: 17314, Enqueue: 83 }
+  3: { Total: 17390, Wait: 17, Dequeue: 9, Check: 17270, Enqueue: 93 }
+  4: { Total: 17630, Wait: 12, Dequeue: 9, Check: 17531, Enqueue: 76 }
+  5: { Total: 17413, Wait: 16, Dequeue: 8, Check: 17307, Enqueue: 80 }
+  6: { Total: 17416, Wait: 20, Dequeue: 10, Check: 17304, Enqueue: 80 }
+  7: { Total: 17678, Wait: 17, Dequeue: 10, Check: 17572, Enqueue: 76 }
+  8: { Total: 17395, Wait: 19, Dequeue: 9, Check: 17287, Enqueue: 78 }
+  9: { Total: 17424, Wait: 17, Dequeue: 9, Check: 17318, Enqueue: 78 }
+  Avarage: { Total: 18134.6, Wait: 282, Dequeue: 10.4, Check: 17757.1, Enqueue: 83}
 ```
 
 ### Uninstall Device Tree
