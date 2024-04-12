@@ -72,10 +72,10 @@ MODULE_DESCRIPTION("VideoBuf2 Test device driver");
 MODULE_AUTHOR("ikwzm");
 MODULE_LICENSE("Dual BSD/GPL");
 
-#define DRIVER_VERSION     "0.0.1"
+#define DRIVER_VERSION     "0.1.0"
 #define DRIVER_NAME        "vb2-test"
-#define CAPTURE_DRV_NAME   "Traffic driver"
-#define PVI_MODULE_NAME    "Traffic"
+#define CAPTURE_DRV_NAME   "vb2-test"
+#define PVI_MODULE_NAME    "vb2-test"
 #define MAX_WIDTH          8192
 #define MAX_HEIGHT         2048
 #define PIXEL_FORMAT       V4L2_PIX_FMT_RGB32
@@ -413,9 +413,15 @@ static int xxxx_v4l2_ioctl_enum_fmt_vid_cap(struct file*         file,
 	struct xxxx_device* xdev = port->xdev;
 	int                 ret  = 0;
 	V4L2_DBG0(xdev, "%s start", __func__);
-	fmt->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	strcpy(fmt->description, "RGB-8-8-8-8");
-	fmt->pixelformat = V4L2_PIX_FMT_RGB32;
+	V4L2_DBG1(xdev, "fmt->index=%d\n", fmt->index);
+	if (fmt->index == 0) {
+		fmt->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		strcpy(fmt->description, "RGB-8-8-8-8");
+		fmt->pixelformat = PIXEL_FORMAT;
+		ret = 0;
+	} else {
+		ret = -EINVAL;
+	}
 	V4L2_DBG0(xdev, "%s done(return=%d)", __func__, ret);
 	return ret;
 }
@@ -442,8 +448,14 @@ static int xxxx_v4l2_ioctl_try_fmt_vid_cap(struct file*        file,
 {
 	struct xxxx_port*   port = file2port(file);
 	struct xxxx_device* xdev = port->xdev;
+	char                pixel_format_name[5];
 	int                 ret  = 0;
 	V4L2_DBG0(xdev, "%s start", __func__);
+	*(uint32_t *)pixel_format_name = fmt->fmt.pix.pixelformat;
+	pixel_format_name[4] = '\0';
+	V4L2_DBG1(xdev, "pixelformat=%s", pixel_format_name);
+	if (fmt->fmt.pix.pixelformat != PIXEL_FORMAT)
+		ret = -EINVAL;
 	V4L2_DBG0(xdev, "%s done(return=%d)", __func__, ret);
 	return ret;
 }
@@ -454,15 +466,28 @@ static int xxxx_v4l2_ioctl_s_fmt_vid_cap(struct file*        file,
 {
 	struct xxxx_port*   port = file2port(file);
 	struct xxxx_device* xdev = port->xdev;
+	char                pixel_format_name[5];
 	int                 ret  = 0;
 	V4L2_DBG0(xdev, "%s start", __func__);
-
-	fmt->fmt.pix.bytesperline = fmt->fmt.pix.width;
+	*(uint32_t *)pixel_format_name = fmt->fmt.pix.pixelformat;
+	pixel_format_name[4] = '\0';
+	V4L2_DBG1(xdev, "pixelformat=%s", pixel_format_name);
+	if (fmt->fmt.pix.pixelformat != PIXEL_FORMAT) {
+		ret = -EINVAL;
+		goto done;
+	}
+	fmt->fmt.pix.bytesperline = fmt->fmt.pix.width*port->bytesperpixel;
 	fmt->fmt.pix.sizeimage    = fmt->fmt.pix.bytesperline * fmt->fmt.pix.height;
+	if (vb2_is_busy(&port->vb2_queue)) {
+		ret = -EBUSY;
+		goto done;
+	}
 	port->width        = fmt->fmt.pix.width;
 	port->height       = fmt->fmt.pix.height;
 	port->bytesperline = fmt->fmt.pix.bytesperline;
 	port->sizeimage    = fmt->fmt.pix.sizeimage;
+	ret = 0;
+    done:
 	V4L2_DBG0(xdev, "%s done(return=%d)", __func__, ret);
 	return ret;
 }
