@@ -209,8 +209,17 @@ static int v4l2_debug = 0;
 module_param(v4l2_debug, int, 0644);
 MODULE_PARM_DESC(v4l2_debug, "debug level (0-2)");
 
-#define V4L2_DBG(level, xdev, fmt, arg...) \
-	v4l2_dbg(level, v4l2_debug, &xdev->v4l2_dev, fmt, ## arg)
+#define V4L2_DBG0(xdev, fmt, arg...) \
+	v4l2_dbg(0, v4l2_debug, &xdev->v4l2_dev, fmt, ## arg)
+
+#define V4L2_DBG1(xdev, fmt, arg...) \
+	v4l2_dbg(1, v4l2_debug, &xdev->v4l2_dev, fmt, ## arg)
+
+#define V4L2_DBG2(xdev, fmt, arg...) \
+	v4l2_dbg(2, v4l2_debug, &xdev->v4l2_dev, fmt, ## arg)
+
+#define V4L2_DBG3(xdev, fmt, arg...) \
+	v4l2_dbg(3, v4l2_debug, &xdev->v4l2_dev, fmt, ## arg)
 
 static int xxxx_vb2_queue_setup(struct vb2_queue* vb2_queue,
                                 unsigned int*     n_buffers,
@@ -221,10 +230,10 @@ static int xxxx_vb2_queue_setup(struct vb2_queue* vb2_queue,
 	struct xxxx_port*   port = vb2_get_drv_priv(vb2_queue);
 	struct xxxx_device* xdev = port->xdev;
 	int                 ret  = 0;
-	V4L2_DBG(1, xdev, "%s start", __func__);
+	V4L2_DBG0(xdev, "%s start", __func__);
         *n_planes = 1;
 	sizes[0] = port->sizeimage;
-	V4L2_DBG(1, xdev, "%s done(return=%d)", __func__, ret);
+	V4L2_DBG0(xdev, "%s done(return=%d)", __func__, ret);
 	return ret;
 }
 
@@ -235,11 +244,12 @@ static void xxxx_vb2_buffer_queue(struct vb2_buffer* vb2_buf)
 	struct vb2_v4l2_buffer* vbuf = to_vb2_v4l2_buffer(vb2_buf);
 	struct xxxx_buffer*     xbuf = container_of(vbuf, struct xxxx_buffer, v4l2_buf);
 	unsigned long           flags;
-	V4L2_DBG(1, xdev, "%s start", __func__);
+	V4L2_DBG0(xdev, "%s start", __func__);
+	V4L2_DBG1(xdev, "owned_by_drv_count=%d", atomic_read(&vb2_buf->vb2_queue->owned_by_drv_count));
 	spin_lock_irqsave(&xdev->slock, flags);
 	list_add_tail(&xbuf->list, &port->xbuf_list);
 	spin_unlock_irqrestore(&xdev->slock, flags);
-	V4L2_DBG(1, xdev, "%s done", __func__);
+	V4L2_DBG0(xdev, "%s done", __func__);
 }
 
 static int xxxx_vb2_start_streaming(struct vb2_queue* vb2_queue, unsigned int count)
@@ -250,7 +260,7 @@ static int xxxx_vb2_start_streaming(struct vb2_queue* vb2_queue, unsigned int co
 	unsigned long       flags;
 	int                 ret  = 0;
 
-	V4L2_DBG(1, xdev, "%s start", __func__);
+	V4L2_DBG0(xdev, "%s(count=%d) start", __func__, count);
 
 	port->sequence = 0;
         
@@ -267,7 +277,7 @@ static int xxxx_vb2_start_streaming(struct vb2_queue* vb2_queue, unsigned int co
 
 	vb2_queue->streaming = 1;
 
-	V4L2_DBG(1, xdev, "%s done(return=%d)", __func__, ret);
+	V4L2_DBG0(xdev, "%s(count=%d) done(return=%d)", __func__, count, ret);
 	return ret;
 }
 
@@ -276,11 +286,13 @@ static void xxxx_vb2_stop_streaming(struct vb2_queue* vb2_queue)
 	struct xxxx_port*   port = vb2_get_drv_priv(vb2_queue);
 	struct xxxx_device* xdev = port->xdev;
 	struct xxxx_buffer* xbuf;
+	struct xxxx_buffer* next_xbuf;
 	struct vb2_buffer*  vb2_buf;
 	unsigned long       flags;
 	bool                streaming;
 
-	V4L2_DBG(1, xdev, "%s start", __func__);
+	V4L2_DBG0(xdev, "%s start", __func__);
+	V4L2_DBG1(xdev, "owned_by_drv_count=%d", atomic_read(&vb2_queue->owned_by_drv_count));
 
 	xxxx_stop(xdev);
 	while(true) {
@@ -293,20 +305,21 @@ static void xxxx_vb2_stop_streaming(struct vb2_queue* vb2_queue)
 		mdelay(1000);
 	}
 	
-	while(!list_empty(&xdev->xbuf_list)) {
-		xbuf = list_first_entry(&xdev->xbuf_list, struct xxxx_buffer, list);
-		list_del(&xbuf->list);
+	spin_lock(&xdev->slock);
+	list_for_each_entry_safe(xbuf, next_xbuf, &xdev->xbuf_list, list) {
 		vb2_buf = &xbuf->v4l2_buf.vb2_buf;
 		vb2_buffer_done(vb2_buf, VB2_BUF_STATE_ERROR);
-	}
-	while(!list_empty(&port->xbuf_list)) {
-		xbuf = list_first_entry(&port->xbuf_list, struct xxxx_buffer, list);
 		list_del(&xbuf->list);
+	}
+	list_for_each_entry_safe(xbuf, next_xbuf, &port->xbuf_list, list) {
 		vb2_buf = &xbuf->v4l2_buf.vb2_buf;
 		vb2_buffer_done(vb2_buf, VB2_BUF_STATE_ERROR);
+		list_del(&xbuf->list);
 	}
+	spin_unlock(&xdev->slock);
 	vb2_queue->streaming = 0;
-	V4L2_DBG(1, xdev, "%s done", __func__);
+	V4L2_DBG1(xdev, "owned_by_drv_count=%d", atomic_read(&vb2_queue->owned_by_drv_count));
+	V4L2_DBG0(xdev, "%s done", __func__);
 }
 
 static struct vb2_ops xxxx_vb2_ops = {
@@ -324,7 +337,7 @@ static int xxxx_v4l2_file_open(struct file* file)
 	struct xxxx_device* xdev = port->xdev;
 	int                 ret  = 0;
 
-	V4L2_DBG(1, xdev, "%s start", __func__);
+	V4L2_DBG0(xdev, "%s start", __func__);
 
 	if (!xdev->setup_done) {
 		xdev->setup_done = 1;
@@ -338,7 +351,7 @@ static int xxxx_v4l2_file_open(struct file* file)
 	file->private_data = &port->v4l2_fh;
 	v4l2_fh_add(&port->v4l2_fh);
 	port->open         = 1;
-	V4L2_DBG(1, xdev, "%s done(return=%d)", __func__, ret);
+	V4L2_DBG0(xdev, "%s done(return=%d)", __func__, ret);
 	return ret;
 }
 
@@ -350,7 +363,7 @@ static int xxxx_v4l2_file_release(struct file* file)
 	struct v4l2_fh*     v4l2_fh   = (struct v4l2_fh*)(file->private_data);
 	int                 ret       = 0;
 
-	V4L2_DBG(1, xdev, "%s start", __func__);
+	V4L2_DBG0(xdev, "%s start", __func__);
 	xxxx_vb2_stop_streaming(vb2_queue);
 	if (v4l2_fh) {
 		v4l2_fh_del(v4l2_fh);
@@ -358,7 +371,7 @@ static int xxxx_v4l2_file_release(struct file* file)
 	}
 	vb2_queue_release(vb2_queue);
 	port->open = 0;
-	V4L2_DBG(1, xdev, "%s done(return=%d)", __func__, ret);
+	V4L2_DBG0(xdev, "%s done(return=%d)", __func__, ret);
 	return ret;
 }
 static const struct v4l2_file_operations xxxx_v4l2_file_ops = {
@@ -382,13 +395,13 @@ static int xxxx_v4l2_ioctl_querycap(struct file*            file,
 	struct xxxx_port*   port = file2port(file);
 	struct xxxx_device* xdev = port->xdev;
 	int                 ret  = 0;
-	V4L2_DBG(1, xdev, "%s start", __func__);
+	V4L2_DBG0(xdev, "%s start", __func__);
 	strncpy(cap->driver  , CAPTURE_DRV_NAME, sizeof(cap->driver)-1);
 	strncpy(cap->card    , PVI_MODULE_NAME , sizeof(cap->card  )-1);
 	strlcpy(cap->bus_info, PVI_MODULE_NAME , sizeof(cap->bus_info));
 	cap->device_caps  = V4L2_CAP_STREAMING | V4L2_CAP_VIDEO_CAPTURE;
 	cap->capabilities = cap->device_caps   | V4L2_CAP_DEVICE_CAPS;
-	V4L2_DBG(1, xdev, "%s done(return=%d)", __func__, ret);
+	V4L2_DBG0(xdev, "%s done(return=%d)", __func__, ret);
 	return ret;
 }
 
@@ -399,11 +412,11 @@ static int xxxx_v4l2_ioctl_enum_fmt_vid_cap(struct file*         file,
 	struct xxxx_port*   port = file2port(file);
 	struct xxxx_device* xdev = port->xdev;
 	int                 ret  = 0;
-	V4L2_DBG(1, xdev, "%s start", __func__);
+	V4L2_DBG0(xdev, "%s start", __func__);
 	fmt->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	strcpy(fmt->description, "RGB-8-8-8-8");
 	fmt->pixelformat = V4L2_PIX_FMT_RGB32;
-	V4L2_DBG(1, xdev, "%s done(return=%d)", __func__, ret);
+	V4L2_DBG0(xdev, "%s done(return=%d)", __func__, ret);
 	return ret;
 }
 
@@ -414,12 +427,12 @@ static int xxxx_v4l2_ioctl_g_fmt_vid_cap(struct file*        file,
 	struct xxxx_port*   port = file2port(file);
 	struct xxxx_device* xdev = port->xdev;
 	int                 ret  = 0;
-	V4L2_DBG(1, xdev, "%s start", __func__);
+	V4L2_DBG0(xdev, "%s start", __func__);
 	fmt->fmt.pix.width        = port->width;
 	fmt->fmt.pix.height       = port->height;
 	fmt->fmt.pix.bytesperline = port->bytesperline;
 	fmt->fmt.pix.sizeimage    = port->sizeimage;
-	V4L2_DBG(1, xdev, "%s done(return=%d)", __func__, ret);
+	V4L2_DBG0(xdev, "%s done(return=%d)", __func__, ret);
 	return ret;
 }
 
@@ -430,8 +443,8 @@ static int xxxx_v4l2_ioctl_try_fmt_vid_cap(struct file*        file,
 	struct xxxx_port*   port = file2port(file);
 	struct xxxx_device* xdev = port->xdev;
 	int                 ret  = 0;
-	V4L2_DBG(1, xdev, "%s start", __func__);
-	V4L2_DBG(1, xdev, "%s done(return=%d)", __func__, ret);
+	V4L2_DBG0(xdev, "%s start", __func__);
+	V4L2_DBG0(xdev, "%s done(return=%d)", __func__, ret);
 	return ret;
 }
 
@@ -442,7 +455,7 @@ static int xxxx_v4l2_ioctl_s_fmt_vid_cap(struct file*        file,
 	struct xxxx_port*   port = file2port(file);
 	struct xxxx_device* xdev = port->xdev;
 	int                 ret  = 0;
-	V4L2_DBG(1, xdev, "%s start", __func__);
+	V4L2_DBG0(xdev, "%s start", __func__);
 
 	fmt->fmt.pix.bytesperline = fmt->fmt.pix.width;
 	fmt->fmt.pix.sizeimage    = fmt->fmt.pix.bytesperline * fmt->fmt.pix.height;
@@ -450,7 +463,7 @@ static int xxxx_v4l2_ioctl_s_fmt_vid_cap(struct file*        file,
 	port->height       = fmt->fmt.pix.height;
 	port->bytesperline = fmt->fmt.pix.bytesperline;
 	port->sizeimage    = fmt->fmt.pix.sizeimage;
-	V4L2_DBG(1, xdev, "%s done(return=%d)", __func__, ret);
+	V4L2_DBG0(xdev, "%s done(return=%d)", __func__, ret);
 	return ret;
 }
 
@@ -596,18 +609,16 @@ static void xxxx_process_buffer_complete(struct xxxx_port* port)
 	        unsigned long      flags;
 		spin_lock_irqsave(&xdev->slock, flags);
 		list_del(&xbuf->list);
-		spin_unlock_irqrestore(&xdev->slock, flags);
 		if (xbuf->allow_dq) {
 			vb2_buffer_done(vb2_buf, VB2_BUF_STATE_DONE);
 			xbuf->allow_dq = false;
-		} else {
-			spin_lock_irqsave(&xdev->slock, flags);
-			if (port->stop == true)
-				port->streaming = 0;
-			else
-				list_add_tail(&xbuf->list, &port->xbuf_list);
-			spin_unlock_irqrestore(&xdev->slock, flags);
+		} else if (port->stop == true) {
+			vb2_buffer_done(vb2_buf, VB2_BUF_STATE_DONE);
+			port->streaming = 0;
+                } else {
+			list_add_tail(&xbuf->list, &port->xbuf_list);
 		}
+		spin_unlock_irqrestore(&xdev->slock, flags);
 	} else {
 		printk("%s:%s", __func__, "BUG().");
 		BUG();
