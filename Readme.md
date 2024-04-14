@@ -84,6 +84,39 @@ Write_Traffic_Check : MW Data Valid Count    : 1048576
 Write_Traffic_Check : MW Data Ready Count    : 1056787
 ```
 
+```console
+shell$ sudo python3 python/mr_test.py -M 16 -N 10
+Read_Traffic_Check : Version                : 0.4.0
+Read_Traffic_Check : Frequency              : 100 MHz
+Read_Traffic_Check : AXI Interface Type     : HP
+Read_Traffic_Check : AXI Data Width         : 128 Bit
+Read_Traffic_Check : Write Transaction Size : 4096 Byte
+Read_Traffic_Check : Read  Transaction Size : 4096 Byte
+Read_Traffic_Check : Cache Coherent         : False
+Read_Traffic_Check : bytes_per_word         : 4
+Read_Traffic_Check : read_words             : 4194304
+Read_Traffic_Check : try_loops              : 10
+Read_Traffic_Check : time                   :   21.329 # [msec]
+Read_Traffic_Check : time                   :   21.224 # [msec]
+Read_Traffic_Check : time                   :   21.217 # [msec]
+Read_Traffic_Check : time                   :   21.234 # [msec]
+Read_Traffic_Check : time                   :   21.223 # [msec]
+Read_Traffic_Check : time                   :   21.198 # [msec]
+Read_Traffic_Check : time                   :   21.219 # [msec]
+Read_Traffic_Check : time                   :   21.223 # [msec]
+Read_Traffic_Check : time                   :   21.199 # [msec]
+Read_Traffic_Check : time                   :   21.183 # [msec]
+Read_Traffic_Check : average_time           :   21.225 # [msec]
+Read_Traffic_Check : throughput             :  790.443 # [mbytes/sec]
+Read_Traffic_Check : MR Total Count         : 2105364
+Read_Traffic_Check : MR Address Xfer Count  : 4096
+Read_Traffic_Check : MR Address Valid Count : 4096
+Read_Traffic_Check : MR Address Ready Count : 2105364
+Read_Traffic_Check : MR Data Xfer Count     : 1048576
+Read_Traffic_Check : MR Data Valid Count    : 2105341
+Read_Traffic_Check : MR Data Ready Count    : 1048594
+```
+
 ### Uninstall Device Tree
 
 ```console
@@ -134,6 +167,39 @@ Write_Traffic_Check : MW Address Ready Count : 4119
 Write_Traffic_Check : MW Data Xfer Count     : 1048576
 Write_Traffic_Check : MW Data Valid Count    : 1110284
 Write_Traffic_Check : MW Data Ready Count    : 1048601
+```
+
+```console
+shell$ sudo python3 python/mr_test.py -M 16 -N 10
+Read_Traffic_Check : Version                : 0.4.0
+Read_Traffic_Check : Frequency              : 100 MHz
+Read_Traffic_Check : AXI Interface Type     : ACP
+Read_Traffic_Check : AXI Data Width         : 128 Bit
+Read_Traffic_Check : Write Transaction Size : 4096 Byte
+Read_Traffic_Check : Read  Transaction Size : 4096 Byte
+Read_Traffic_Check : Cache Coherent         : True
+Read_Traffic_Check : bytes_per_word         : 4
+Read_Traffic_Check : read_words             : 4194304
+Read_Traffic_Check : try_loops              : 10
+Read_Traffic_Check : time                   :   31.389 # [msec]
+Read_Traffic_Check : time                   :   31.057 # [msec]
+Read_Traffic_Check : time                   :   30.980 # [msec]
+Read_Traffic_Check : time                   :   30.890 # [msec]
+Read_Traffic_Check : time                   :   30.875 # [msec]
+Read_Traffic_Check : time                   :   31.018 # [msec]
+Read_Traffic_Check : time                   :   30.612 # [msec]
+Read_Traffic_Check : time                   :   31.016 # [msec]
+Read_Traffic_Check : time                   :   30.863 # [msec]
+Read_Traffic_Check : time                   :   30.762 # [msec]
+Read_Traffic_Check : average_time           :   30.946 # [msec]
+Read_Traffic_Check : throughput             :  542.141 # [mbytes/sec]
+Read_Traffic_Check : MR Total Count         : 3053001
+Read_Traffic_Check : MR Address Xfer Count  : 4096
+Read_Traffic_Check : MR Address Valid Count : 2345924
+Read_Traffic_Check : MR Address Ready Count : 4261
+Read_Traffic_Check : MR Data Xfer Count     : 1048576
+Read_Traffic_Check : MR Data Valid Count    : 1835008
+Read_Traffic_Check : MR Data Ready Count    : 1996231
 ```
 
 ### Uninstall Device Tree

@@ -13,11 +13,22 @@ class Traffic_Checker:
     MR_MODE_REGS_ADDR   = 0x001C
     MR_STAT_REGS_ADDR   = 0x001E
     MR_CTRL_REGS_ADDR   = 0x001F
+
     MW_ADDR_REGS_ADDR   = 0x0020
     MW_SIZE_REGS_ADDR   = 0x0028
     MW_MODE_REGS_ADDR   = 0x002C
     MW_STAT_REGS_ADDR   = 0x002E
     MW_CTRL_REGS_ADDR   = 0x002F
+
+    MR_MON_CTRL_ADDR    = 0x0080
+    MR_MON_COUNT_ADDR   = 0x0088
+    MR_MON_ADDR_ADDR    = 0x0090
+    MR_MON_AVAL_ADDR    = 0x0098
+    MR_MON_ARDY_ADDR    = 0x00A0
+    MR_MON_DATA_ADDR    = 0x00A8
+    MR_MON_DVAL_ADDR    = 0x00B0
+    MR_MON_DRDY_ADDR    = 0x00B8
+
     MW_MON_CTRL_ADDR    = 0x00C0
     MW_MON_COUNT_ADDR   = 0x00C8
     MW_MON_ADDR_ADDR    = 0x00D0
@@ -165,4 +176,39 @@ class Traffic_Checker:
         print ("{0} MW Data Xfer Count     : {1}"    .format(tag, self.mw_monitor_data))
         print ("{0} MW Data Valid Count    : {1}"    .format(tag, self.mw_monitor_dval))
         print ("{0} MW Data Ready Count    : {1}"    .format(tag, self.mw_monitor_drdy))
+        
+    def mr_monitor_clear(self):
+        self.regs.write_byte(Traffic_Checker.MR_MON_CTRL_ADDR+7, 0x80)
+
+    def mr_read_monitor(self):
+        val_lo = self.regs.read_word(Traffic_Checker.MR_MON_COUNT_ADDR)
+        val_hi = self.regs.read_word(Traffic_Checker.MR_MON_COUNT_ADDR+4)
+        self.mr_monitor_count = (val_hi << 32) | (val_lo)
+        val_lo = self.regs.read_word(Traffic_Checker.MR_MON_ADDR_ADDR)
+        val_hi = self.regs.read_word(Traffic_Checker.MR_MON_ADDR_ADDR+4)
+        self.mr_monitor_addr  = (val_hi << 32) | (val_lo)
+        val_lo = self.regs.read_word(Traffic_Checker.MR_MON_AVAL_ADDR)
+        val_hi = self.regs.read_word(Traffic_Checker.MR_MON_AVAL_ADDR+4)
+        self.mr_monitor_aval  = (val_hi << 32) | (val_lo)
+        val_lo = self.regs.read_word(Traffic_Checker.MR_MON_ARDY_ADDR)
+        val_hi = self.regs.read_word(Traffic_Checker.MR_MON_ARDY_ADDR+4)
+        self.mr_monitor_ardy  = (val_hi << 32) | (val_lo)
+        val_lo = self.regs.read_word(Traffic_Checker.MR_MON_DATA_ADDR)
+        val_hi = self.regs.read_word(Traffic_Checker.MR_MON_DATA_ADDR+4)
+        self.mr_monitor_data  = (val_hi << 32) | (val_lo)
+        val_lo = self.regs.read_word(Traffic_Checker.MR_MON_DVAL_ADDR)
+        val_hi = self.regs.read_word(Traffic_Checker.MR_MON_DVAL_ADDR+4)
+        self.mr_monitor_dval  = (val_hi << 32) | (val_lo)
+        val_lo = self.regs.read_word(Traffic_Checker.MR_MON_DRDY_ADDR)
+        val_hi = self.regs.read_word(Traffic_Checker.MR_MON_DRDY_ADDR+4)
+        self.mr_monitor_drdy  = (val_hi << 32) | (val_lo)
+
+    def mr_print_monitor(self, tag="Traffic_Checker", file=sys.stdout):
+        print ("{0} MR Total Count         : {1}"    .format(tag, self.mr_monitor_count))
+        print ("{0} MR Address Xfer Count  : {1}"    .format(tag, self.mr_monitor_addr))
+        print ("{0} MR Address Valid Count : {1}"    .format(tag, self.mr_monitor_aval))
+        print ("{0} MR Address Ready Count : {1}"    .format(tag, self.mr_monitor_ardy))
+        print ("{0} MR Data Xfer Count     : {1}"    .format(tag, self.mr_monitor_data))
+        print ("{0} MR Data Valid Count    : {1}"    .format(tag, self.mr_monitor_dval))
+        print ("{0} MR Data Ready Count    : {1}"    .format(tag, self.mr_monitor_drdy))
         
