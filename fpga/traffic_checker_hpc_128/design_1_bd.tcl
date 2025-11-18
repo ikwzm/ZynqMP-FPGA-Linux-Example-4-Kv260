@@ -20,12 +20,15 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2023.1
-set current_vivado_version [version -short]
+array set available_vivado_version_list {"2023.1"   "ok"}
+array set available_vivado_version_list {"2025.1"   "ok"}
+array set available_vivado_version_list {"2025.1.1" "ok"}
+set available_vivado_version [array names available_vivado_version_list]
+set current_vivado_version   [version -short]
 
-if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
+if { [string first [lindex [array get available_vivado_version_list $current_vivado_version] 1] "ok"] == -1 } {
    puts ""
-   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR: This script was generated using Vivado <$available_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$available_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
 
    return 1
 }
@@ -193,7 +196,7 @@ proc create_root_design { parentCell } {
   apply_bd_automation -rule xilinx.com:bd_rule:zynq_ultra_ps_e -config {apply_board_preset "1"} $zynq_ultra_ps_e_0
   set_property -dict [list CONFIG.PSU__USE__M_AXI_GP0   {1} ] $zynq_ultra_ps_e_0
   set_property -dict [list CONFIG.PSU__USE__M_AXI_GP1   {0} ] $zynq_ultra_ps_e_0
-  set_property -dict [list CONFIG.PSU__USE__S_AXI_GP2   {1} ] $zynq_ultra_ps_e_0
+  set_property -dict [list CONFIG.PSU__USE__S_AXI_GP0   {1} ] $zynq_ultra_ps_e_0
   set_property -dict [list CONFIG.PSU__USE__IRQ0        {1} ] $zynq_ultra_ps_e_0
   set_property -dict [list CONFIG.PSU__USE__FABRIC__RST {1} ] $zynq_ultra_ps_e_0
   set_property -dict [list CONFIG.PSU__FPGA_PL0_ENABLE  {1} ] $zynq_ultra_ps_e_0
@@ -212,7 +215,7 @@ proc create_root_design { parentCell } {
   # Create instance: AXI_TRAFFIC_CHECKER and set properties
   #
   set AXI_TRAFFIC_CHECKER_0 [ create_bd_cell -type ip -vlnv ikwzm:PIPEWORK:AXI_TRAFFIC_CHECKER:0.6 AXI_TRAFFIC_CHECKER_0 ]
-  set_property -dict [ list CONFIG.BUILD_VERSION   {1} ] $AXI_TRAFFIC_CHECKER_0
+  set_property -dict [ list CONFIG.BUILD_VERSION   {2} ] $AXI_TRAFFIC_CHECKER_0
   set_property -dict [ list CONFIG.M_ADDR_WIDTH   {64} ] $AXI_TRAFFIC_CHECKER_0
   set_property -dict [ list CONFIG.M_DATA_WIDTH  {128} ] $AXI_TRAFFIC_CHECKER_0
   set_property -dict [ list CONFIG.M_ID_WIDTH      {6} ] $AXI_TRAFFIC_CHECKER_0
@@ -223,23 +226,23 @@ proc create_root_design { parentCell } {
   set axi_interconnect_csr [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_csr ]
   set_property -dict [ list CONFIG.NUM_MI {1} ] $axi_interconnect_csr
   #
-  # Create instance: axi_interconnect_hp0, and set properties
+  # Create instance: axi_interconnect_hpc0, and set properties
   #
-  set axi_interconnect_hp0  [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_hp0 ]
-  set_property -dict [ list CONFIG.NUM_MI {1} ] $axi_interconnect_hp0
+  set axi_interconnect_hpc0  [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_hpc0 ]
+  set_property -dict [ list CONFIG.NUM_MI {1} ] $axi_interconnect_hpc0
   #
   # Connect
   #
   connect_bd_net -net SYS_CLK0   [get_bd_pins zynq_ultra_ps_e_0/pl_clk0]           \
                                  [get_bd_pins zynq_ultra_ps_e_0/maxihpm0_fpd_aclk] \
-                                 [get_bd_pins zynq_ultra_ps_e_0/saxihp0_fpd_aclk]  \
+                                 [get_bd_pins zynq_ultra_ps_e_0/saxihpc0_fpd_aclk] \
                                  [get_bd_pins proc_sys_reset_0/slowest_sync_clk]   \
                                  [get_bd_pins axi_interconnect_csr/ACLK]           \
                                  [get_bd_pins axi_interconnect_csr/S00_ACLK]       \
                                  [get_bd_pins axi_interconnect_csr/M00_ACLK]       \
-                                 [get_bd_pins axi_interconnect_hp0/ACLK]           \
-                                 [get_bd_pins axi_interconnect_hp0/S00_ACLK]       \
-                                 [get_bd_pins axi_interconnect_hp0/M00_ACLK]       \
+                                 [get_bd_pins axi_interconnect_hpc0/ACLK]          \
+                                 [get_bd_pins axi_interconnect_hpc0/S00_ACLK]      \
+                                 [get_bd_pins axi_interconnect_hpc0/M00_ACLK]      \
                                  [get_bd_pins AXI_TRAFFIC_CHECKER_0/ACLK]    
 
   connect_bd_net -net PL_RESETN  [get_bd_pins zynq_ultra_ps_e_0/pl_resetn0] [get_bd_pins proc_sys_reset_0/ext_reset_in]
@@ -247,9 +250,9 @@ proc create_root_design { parentCell } {
                                  [get_bd_pins axi_interconnect_csr/ARESETN]        \
                                  [get_bd_pins axi_interconnect_csr/S00_ARESETN]    \
                                  [get_bd_pins axi_interconnect_csr/M00_ARESETN]    \
-                                 [get_bd_pins axi_interconnect_hp0/ARESETN]        \
-                                 [get_bd_pins axi_interconnect_hp0/S00_ARESETN]    \
-                                 [get_bd_pins axi_interconnect_hp0/M00_ARESETN]    \
+                                 [get_bd_pins axi_interconnect_hpc0/ARESETN]       \
+                                 [get_bd_pins axi_interconnect_hpc0/S00_ARESETN]   \
+                                 [get_bd_pins axi_interconnect_hpc0/M00_ARESETN]   \
                                  [get_bd_pins AXI_TRAFFIC_CHECKER_0/ARESETn]    
   connect_bd_net -net IRQ0       [get_bd_pins AXI_TRAFFIC_CHECKER_0/IRQ]           \
                                  [get_bd_pins zynq_ultra_ps_e_0/pl_ps_irq0]
@@ -257,15 +260,15 @@ proc create_root_design { parentCell } {
   # Connect Interfaces
   #
   connect_bd_intf_net -intf_net AXI_CSR     -boundary_type upper [get_bd_intf_pins zynq_ultra_ps_e_0/M_AXI_HPM0_FPD]  [get_bd_intf_pins axi_interconnect_csr/S00_AXI]
-  connect_bd_intf_net -intf_net AXI_HP0     -boundary_type upper [get_bd_intf_pins zynq_ultra_ps_e_0/S_AXI_HP0_FPD]  [get_bd_intf_pins axi_interconnect_hp0/M00_AXI]
+  connect_bd_intf_net -intf_net AXI_HPC0    -boundary_type upper [get_bd_intf_pins zynq_ultra_ps_e_0/S_AXI_HPC0_FPD]  [get_bd_intf_pins axi_interconnect_hpc0/M00_AXI]
   connect_bd_intf_net -intf_net AXI_TC0_CSR -boundary_type upper [get_bd_intf_pins axi_interconnect_csr/M00_AXI] [get_bd_intf_pins AXI_TRAFFIC_CHECKER_0/C]
-  connect_bd_intf_net -intf_net AXI_TC0_M   -boundary_type upper [get_bd_intf_pins axi_interconnect_hp0/S00_AXI] [get_bd_intf_pins AXI_TRAFFIC_CHECKER_0/M]
+  connect_bd_intf_net -intf_net AXI_TC0_M   -boundary_type upper [get_bd_intf_pins axi_interconnect_hpc0/S00_AXI] [get_bd_intf_pins AXI_TRAFFIC_CHECKER_0/M]
   #
   # Assign Address Map
   #
   create_bd_addr_seg -range 0x1000      -offset  0xA0000000 [get_bd_addr_spaces zynq_ultra_ps_e_0/Data] [get_bd_addr_segs AXI_TRAFFIC_CHECKER_0/C/reg0] SEG_axi_traffic_checker_0_Reg
-  create_bd_addr_seg -range  0x80000000 -offset  0x00000000 [get_bd_addr_spaces AXI_TRAFFIC_CHECKER_0/M] [get_bd_addr_segs zynq_ultra_ps_e_0/SAXIGP2/HP0_DDR_LOW ] SEG_zynq_ultra_ps_e_0_HP0_DDR_LOW
-  create_bd_addr_seg -range 0x100000000 -offset 0x800000000 [get_bd_addr_spaces AXI_TRAFFIC_CHECKER_0/M] [get_bd_addr_segs zynq_ultra_ps_e_0/SAXIGP2/HP0_DDR_HIGH] SEG_zynq_ultra_ps_e_0_HP0_DDR_HIGH
+  create_bd_addr_seg -range  0x80000000 -offset  0x00000000 [get_bd_addr_spaces AXI_TRAFFIC_CHECKER_0/M] [get_bd_addr_segs zynq_ultra_ps_e_0/SAXIGP0/HPC0_DDR_LOW ] SEG_zynq_ultra_ps_e_0_HPC0_DDR_LOW
+  create_bd_addr_seg -range 0x100000000 -offset 0x800000000 [get_bd_addr_spaces AXI_TRAFFIC_CHECKER_0/M] [get_bd_addr_segs zynq_ultra_ps_e_0/SAXIGP0/HPC0_DDR_HIGH] SEG_zynq_ultra_ps_e_0_HPC0_DDR_HIGH
   
 }
 # End of create_root_design()
