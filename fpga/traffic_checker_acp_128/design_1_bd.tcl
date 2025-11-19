@@ -20,12 +20,15 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2023.1
-set current_vivado_version [version -short]
+array set available_vivado_version_list {"2023.1"   "ok"}
+array set available_vivado_version_list {"2025.1"   "ok"}
+array set available_vivado_version_list {"2025.1.1" "ok"}
+set available_vivado_version [array names available_vivado_version_list]
+set current_vivado_version   [version -short]
 
-if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
+if { [string first [lindex [array get available_vivado_version_list $current_vivado_version] 1] "ok"] == -1 } {
    puts ""
-   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR: This script was generated using Vivado <$available_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$available_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
 
    return 1
 }
@@ -211,7 +214,7 @@ proc create_root_design { parentCell } {
   # 
   # Create instance: AXI_TRAFFIC_CHECKER and set properties
   #
-  set AXI_TRAFFIC_CHECKER_0 [ create_bd_cell -type ip -vlnv ikwzm:PIPEWORK:AXI_TRAFFIC_CHECKER:0.4 AXI_TRAFFIC_CHECKER_0 ]
+  set AXI_TRAFFIC_CHECKER_0 [ create_bd_cell -type ip -vlnv ikwzm:PIPEWORK:AXI_TRAFFIC_CHECKER:0.6 AXI_TRAFFIC_CHECKER_0 ]
   set_property -dict [ list CONFIG.BUILD_VERSION   {3} ] $AXI_TRAFFIC_CHECKER_0
   set_property -dict [ list CONFIG.M_ADDR_WIDTH   {64} ] $AXI_TRAFFIC_CHECKER_0
   set_property -dict [ list CONFIG.M_DATA_WIDTH  {128} ] $AXI_TRAFFIC_CHECKER_0

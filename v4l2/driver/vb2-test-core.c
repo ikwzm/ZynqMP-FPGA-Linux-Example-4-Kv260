@@ -57,7 +57,6 @@
 #include <linux/spinlock.h>
 #include <linux/version.h>
 
-#include <media/videobuf-vmalloc.h>
 #include <media/videobuf2-core.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-ioctl.h>
@@ -396,9 +395,9 @@ static int xxxx_v4l2_ioctl_querycap(struct file*            file,
 	struct xxxx_device* xdev = port->xdev;
 	int                 ret  = 0;
 	V4L2_DBG0(xdev, "%s start", __func__);
-	strncpy(cap->driver  , CAPTURE_DRV_NAME, sizeof(cap->driver)-1);
-	strncpy(cap->card    , PVI_MODULE_NAME , sizeof(cap->card  )-1);
-	strlcpy(cap->bus_info, PVI_MODULE_NAME , sizeof(cap->bus_info));
+	strscpy(cap->driver  , CAPTURE_DRV_NAME, sizeof(cap->driver  ));
+	strscpy(cap->card    , PVI_MODULE_NAME , sizeof(cap->card    ));
+	strscpy(cap->bus_info, PVI_MODULE_NAME , sizeof(cap->bus_info));
 	cap->device_caps  = V4L2_CAP_STREAMING | V4L2_CAP_VIDEO_CAPTURE;
 	cap->capabilities = cap->device_caps   | V4L2_CAP_DEVICE_CAPS;
 	V4L2_DBG0(xdev, "%s done(return=%d)", __func__, ret);
@@ -747,7 +746,7 @@ static int xxxx_platform_device_probe(struct platform_device* pdev)
 	return ret;
 }
 
-static int xxxx_platform_device_remove(struct platform_device* pdev)
+static inline int _xxxx_platform_device_remove(struct platform_device* pdev)
 {
 	struct xxxx_device* xdev = platform_get_drvdata(pdev);
 	if (xdev != NULL) {
@@ -758,6 +757,17 @@ static int xxxx_platform_device_remove(struct platform_device* pdev)
 	}
 	return 0;
 }
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
+static int xxxx_platform_device_remove(struct platform_device* pdev)
+{
+	return _xxxx_platform_device_remove(pdev);
+}
+#else
+static void xxxx_platform_device_remove(struct platform_device* pdev)
+{
+	_xxxx_platform_device_remove(pdev);
+}
+#endif
 
 #if defined CONFIG_OF
 static const struct of_device_id xxxx_of_match[] = {

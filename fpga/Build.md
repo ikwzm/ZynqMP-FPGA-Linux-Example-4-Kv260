@@ -3,7 +3,7 @@ Build Bitstream files
 
 ### Requirement
 
-* Xilinx Vivado 2023.1
+* Xilinx Vivado 2023.1 or 2025.1 or 2025.1.1
 
 ### Build traffic_checker_hp_128.bin
 
