@@ -45,6 +45,7 @@
 
 #include <iostream>
 #include <string>
+#include <cstdint>
 
 class v4l2_capture
 {
