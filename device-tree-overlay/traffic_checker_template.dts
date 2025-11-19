@@ -77,7 +77,6 @@
 				dma-coherent;
 #endif
 			};
-		};
 #endif
 #ifdef DRV_TYPE_V4L2
 			vb2_test {
@@ -90,5 +89,6 @@
 #endif
 			};
 #endif
+		};
 	};
 };
