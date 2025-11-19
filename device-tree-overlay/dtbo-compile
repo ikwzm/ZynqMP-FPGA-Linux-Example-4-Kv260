@@ -1,0 +1,225 @@
+#!/usr/bin/env bash
+#
+# Simple script for device tree overlay compiler.
+#
+__copyright__='Copyright (C) 2022-2024 ikwzm'
+__version__='0.3'
+__license__='BSD-2-Clause'
+__author__='ikwzm'
+__author_email__='ichiro_k@ca2.so-net.ne.jp'
+__url__='https://github.com/ikwzm/dtbo-util'
+
+set -e
+set -o pipefail
+
+script_name=$0
+verbose=0
+dry_run=0
+gcc_command="gcc"
+gcc_options="-E -P -x assembler-with-cpp -nostdinc -undef -D__DTS__"
+gcc_run=0
+dtc_command="dtc"
+dtc_options="-I dts --symbol"
+dtc_run=1
+output_format="dtb"
+help_run=0
+
+do_help()
+{
+    echo "NAME"
+    echo "     $script_name - Device Tree Overlay Compiler"
+    echo ""
+    echo "SYNOPSYS"
+    echo "     $script_name [<options>] DTS..."
+    echo ""
+    echo "DESCRIPTION"
+    echo "     Device Tree Overlay Compiler"
+    echo ""
+    echo "OPTIONS"
+    echo "        -h, --help         Run Help    command"
+    echo "        -v, --verbose      Turn on verbosity"
+    echo "        -n, --dry-run      Don't actually run any command"
+    echo "        -P, --preprocess   Preprocess only; do not run DTC"
+    echo "        -k, --kernel <arg> Linux kernel source directory"
+    echo "        -K                 Linux kernel source directory is the current system"
+    echo "  GCC PreProcessor Options"
+    echo "        -i* args           This option is passed to gcc preprocessor"
+    echo "        -I*                This option is passed to gcc preprocessor"
+    echo "        -D*                This option is passed to gcc preprocessor"
+    echo "        -U*                This option is passed to gcc preprocessor"
+    echo "  DTC(Device Tree Compiler) Options"
+    echo "        -q, --quiet                "
+    echo "              Quiet: -q suppress warnings, -qq errors, -qqq all"
+    echo "        -o, --out <arg>            "
+    echo "              Output file"
+    echo "        -O, --out-format <arg>"
+    echo "              Output formats are:"
+    echo "              dts - device tree source text"
+    echo "              dtb - device tree blob"
+    echo "              asm - assembler source"
+    echo "        -d, --out-dependency <arg> Output dependency file"
+    echo "        -R, --reserve <arg>        "
+    echo "              Make space for <number> reserve map entries (for dtb and asm output)"
+    echo "        -S, --space <arg>          "
+    echo "              Make the blob at least <bytes> long (extra space)"
+    echo "        -p, --pad <arg>            "
+    echo "              Add padding to the blob of <bytes> long (extra space)"
+    echo "        -a, --align <arg>          "
+    echo "              Make the blob align to the <bytes> (extra space)"
+    echo "        -b, --boot-cpu <arg>       "
+    echo "              Set the physical boot cpu"
+    echo "        -f, --force                "
+    echo "              Try to produce output even if the input tree has errors"
+    echo "        -i, --include <arg>        "
+    echo "              Add a path to search for include files"
+    echo "        -s, --sort                 "
+    echo "              Sort nodes and properties before outputting (useful for comparing trees)"
+    echo "        -H, --phandle <arg>        "
+    echo "              Valid phandle formats are:"
+    echo "                      legacy - 'linux,phandle' properties only"
+    echo "                      epapr  - 'phandle' properties only"
+    echo "                      both   - Both 'linux,phandle' and 'phandle' properties"
+    echo "        -W, --warning <arg>        "
+    echo "              Enable/disable warnings (prefix with "no-")"
+    echo "        -E, --error <arg>          "
+    echo "              Enable/disable errors (prefix with "no-")"
+    echo "        -A, --auto-alias           "
+    echo "              Enable auto-alias of labels"
+    echo ""
+    echo "VARIABLES"
+    echo "        DTS                      Device Tree Overlay Source File"
+    echo "        LINUX_KERNEL_SOURCE_PATH Linux kernel source directory"
+}
+
+run_command()
+{
+    if [[ $dry_run -ne 0 ]]; then
+	echo "$1"
+    else
+        eval "$1"
+    fi
+}    
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+	-v|--verbose)
+	    verbose=1
+	    shift
+	    ;;
+	-n|--dry-run)
+	    dry_run=1
+	    shift
+	    ;;
+	-h|--help)
+	    help_run=1
+	    shift
+	    ;;
+	-P|--preprocess)
+	    dtc_run=0
+	    shift
+	    ;;
+	-o|--out)
+	    shift
+	    output_file=$1
+	    shift
+	    ;;
+        -O|--out-format)
+	    shift
+	    output_format=$1
+	    shift
+	    ;;
+	-i|--include|        \
+        -d|--out-dependency| \
+	-R|--reserve|        \
+	-S|--space|          \
+	-p|--pad|            \
+	-a|--align|          \
+	-b|--boot-cpu|       \
+	-H|--phandle|        \
+	-W|--warning|        \
+	-E|--error)
+	    dtc_options="$dtc_options $1"
+	    shift
+	    dtc_options="$dtc_options $1"
+	    shift
+	    ;;
+        -s|--sort|           \
+        -f|--force|          \
+        -A|--auto-alias|     \
+        -q| --quiet)
+	    dtc_options="$dtc_options $1"
+	    shift
+	    ;;
+	-I|-i*)
+	    gcc_run=1
+	    gcc_options="$gcc_options $1"
+	    shift
+	    gcc_options="$gcc_options $1"
+	    shift
+	    ;;
+	-D*|-U*)
+	    gcc_run=1
+	    gcc_options="$gcc_options $1"
+	    shift
+	    ;;
+	-undef|-nostdinc)
+	    gcc_run=1
+	    gcc_options="$gcc_options $1"
+	    shift
+	    ;;
+	-K)
+	    linux_kernel_source_auto_set=1
+	    shift
+	    ;;
+	-k|--kernel)
+	    shift
+	    LINUX_KERNEL_SOURCE_PATH=$1
+	    shift
+	    ;;
+	*)
+	    source_files="$source_files $1"
+	    shift
+	    ;;
+    esac
+done
+
+if [[ ! -z $linux_kernel_source_auto_set ]]; then
+    linux_release=$(eval 'uname -r')
+    LINUX_KERNEL_SOURCE_PATH="/usr/src/linux-headers-$linux_release"
+fi
+
+if [[ ! -z $LINUX_KERNEL_SOURCE_PATH ]]; then
+    if [[ -x "$LINUX_KERNEL_SOURCE_PATH/scripts/dtc/dtc" ]]; then
+	dtc="$LINUX_KERNEL_SOURCE_PATH/scripts/dtc/dtc"
+    fi
+    if [[ -d "$LINUX_KERNEL_SOURCE_PATH/include" ]]; then
+        gcc_options="$gcc_options -I $LINUX_KERNEL_SOURCE_PATH/include"
+        gcc_run=1
+    else
+	echo "$script_name: Not found LINUX_KERNEL_SOURCE_PATH($LINUX_KERNEL_SOURCE_PATH)" >&2
+    fi
+fi
+
+if [[ $help_run -ne 0 ]]; then
+    do_help
+    exit 0
+fi
+
+if [[ $gcc_run -ne 0 ]]; then
+    command="$gcc_command $gcc_options $source_files"
+else
+    command="cat $source_files"
+fi
+
+if [[ $dtc_run -ne 0 ]]; then
+    command="$command | $dtc_command $dtc_options -O $output_format"
+    if [[ ! -z $output_file ]]; then
+        command="$command -o $output_file"
+    fi
+else
+    if [[ ! -z $output_file ]]; then
+        command="$command  > $output_file"
+    fi
+fi
+
+run_command "$command"
